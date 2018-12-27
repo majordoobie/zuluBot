@@ -1,0 +1,6 @@
+*.txt
+*.ini
+*.db
+ZuluBot_Database.py
+db_example.py
+
