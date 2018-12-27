@@ -2,5 +2,10 @@
 *.ini
 *.db
 ZuluBot_Database.py
-db_example.py
+db_examle.py
+archive/
+ce96*
+discord.py/
+__pycache__/
+.DS_Store
 
