@@ -237,7 +237,7 @@ async def useradd(ctx):
                 #
                 msg = f"Initiating database with {member_stat.coc_name}'s data."
                 await ctx.send(embed = Embed(title=msg, color=0xFFFF00))
-                DB.insert_userdata((
+                send = DB.insert_userdata((
                     member_stat.coc_tag,
                     member_stat.coc_name,
                     member_stat.th_lvl,
@@ -249,12 +249,21 @@ async def useradd(ctx):
                     "True",
                     None
                 ))
-                # DB.update_donations((
-                #     datetime.utcnow(),
-                #     member_stat.coc_tag,
-                #     member_stat.total_Donations,
-                #     "True"
-                # ))
+                
+                if send != None:
+                    msg = f"Clash tag {member_stat.coc_tag} already exists in the database."
+                    await ctx.send(embed = Embed(title=f"**ERROR**\n{send}", description=msg, color=0xff0000))
+                    ####
+                        # Insert code for checking the "Kicked" flag and offer
+                        # to flip to true
+                    ###
+
+                DB.update_donations((
+                    datetime.utcnow(),
+                    member_stat.coc_tag,
+                    member_stat.total_Donations,
+                    "True"
+                ))
                 #
                 # Welcome the user and display their stats
                 #

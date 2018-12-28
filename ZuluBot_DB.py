@@ -30,8 +30,10 @@ class ZuluDB():
         try:                                    
             self.conn.cursor().execute(sql_create_users_table)
             self.conn.commit()
+            return None
         except sqlite3.OperationalError as e:
             print(e)
+            return e
         
         sql_create_update_table = """ CREATE TABLE IF NOT EXISTS dailyupdate (
                                         Update text NOT NULL,
@@ -69,9 +71,11 @@ class ZuluDB():
         try:
             self.conn.cursor().execute(sql_update, tupe)
             self.conn.commit()
+            return None
 
         except sqlite3.IntegrityError as e:
             print(e)
+            return e
     
     def update_donations(self, tupe):
         """ Insert updated user donation data 
