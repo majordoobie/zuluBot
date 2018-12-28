@@ -13,14 +13,19 @@ class ZuluDB():
 
     def initiate_db(self):
         sql_create_users_table = """ CREATE TABLE IF NOT EXISTS users (
-                                        CoC_tag text NOT NULL,
-                                        CoC_name text NOT NULL,
+                                        Clash_tag text NOT NULL,
+                                        Clash_name text NOT NULL,
+                                        Clash_lvl integer NOT NULL,
+                                        Clash_league text,
+                                        Clash_icon text,
+
                                         Disc_ID integer NOT NULL,
-                                        CoC_thLvl integer NOT NULL,
-                                        CoC_league text,
-                                        CoC_icon text,
-                                        joined_date integer NOT NULL,
-                                        PRIMARY KEY(CoC_tag)
+                                        Disc_joinedDate integer NOT NULL,
+
+                                        in_PlanningServer text NOT NULL,
+                                        is_Active text NOT NULL,
+                                        kick_Note text,
+                                        PRIMARY KEY(Clash_tag)
                                     ); """
         try:                                    
             self.conn.cursor().execute(sql_create_users_table)
@@ -30,11 +35,12 @@ class ZuluDB():
         
         sql_create_update_table = """CREATE TABLE IF NOT EXISTS dailyupdate (
                                         date REAL NOT NULL,
-                                        CoC_tag text NOT NULL,
+                                        Clash_tag text NOT NULL,
                                         Current_Donation integer NOT NULL,
-                                        isPresent text NOT NULL,
-                                        PRIMARY KEY (date, CoC_tag),
-                                        CONSTRAINT coc_tag_constraint FOREIGN KEY (CoC_tag) REFERENCES users(CoC_tag)    
+                                        in_Zulu text NOT NULL,
+
+                                        PRIMARY KEY (date, Clash_tag),
+                                        CONSTRAINT coc_tag_constraint FOREIGN KEY (Clash_tag) REFERENCES users(Clash_tag)    
                                     );"""
         try:                                    
             self.conn.cursor().execute(sql_create_update_table)
@@ -55,8 +61,9 @@ class ZuluDB():
                     CoC_thLvl,
                     CoC_league,
                     CoC_icon,
-                    joined_date)
-                    VALUES(?,?,?,?,?,?,?)
+                    joined_date,
+                    in_PlanningServer)
+                    VALUES(?,?,?,?,?,?,?,?)
                         """  
         try:
             self.conn.cursor().execute(sql_update, tupe)

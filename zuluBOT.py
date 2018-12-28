@@ -7,11 +7,14 @@ from collections import OrderedDict
 from configparser import ConfigParser
 from requests import get
 
+#Permissions
+# create_instant_invite
+
 config = ConfigParser()
 config.read('zuluConfig.ini')
-discord_client = commands.Bot(command_prefix = config['Bot Configs']['prefix'])
+discord_client = commands.Bot(command_prefix = config['Bot']['Bot_Prefix'])
 discord_client.remove_command("help")
-coc_client = CoC(config['Clash Configs']['coc_token'])
+coc_client = CoC(config['Clash']['ZuluClash_Token'])
 
 # Function to check if user is a leader/admin
 def authorized(users_roles):
@@ -22,23 +25,16 @@ def authorized(users_roles):
 
 # Check if discord_ID is part of the server
 def is_DiscordUser(member_ID):
-    guild_obj = discord_client.get_guild(int(config['Bot Configs']['guild_id']))
+    guild_obj = discord_client.get_guild(int(config['Discord']['ZuluDisc_ID']))
     user_obj = guild_obj.get_member(int(member_ID))
     if user_obj == None:
         return False, None
     else:
         return True, user_obj
-        
-
-def get_role_ID(string_ID, server_roles):
-    for role in server_roles:
-        if role.name == string_ID:
-            return role
-    return None
 
 # Function for getting the TH object role by providing the TH level with CoC_API
 def get_THRole(userLevel):
-    guild_obj = discord_client.get_guild(int(config['Bot Configs']['guild_id']))
+    guild_obj = discord_client.get_guild(int(config['Discord']['ZuluDisc_ID']))
     levels = [9, 10, 11, 12]
     str_roles = ['th9s', 'th10s', 'th11s', 'th12s']
     for level, str_role in zip(levels, str_roles):
@@ -46,31 +42,42 @@ def get_THRole(userLevel):
             objRole = guild_obj.get_role(int(config['Discord Roles'][str(str_role)]))
             return objRole, str_role
 
+def invite():
+    obj = discord_client.get_guild(int(config['Discord']['PlanDisc_ID']))
+    channel = obj.get_channel(int(config['Discord']['PlanDisc_Channel']))
+    return channel
 
-
-# def userAdd(discord_ID, res, bot_obj):
-#     await bot_obj.add_roles(discord_ID, "CoC Members")
-
-@discord_client.command(pass_context=True)
+@discord_client.command()
 async def test(ctx):
-    #265368254761926667
-    guild_obj = discord_client.get_guild(int(config['Bot Configs']['guild_id']))
-    user_obj = guild_obj.get_member(265368254761926667)
-    for i in user_obj.roles:
-        if i.name.startswith('th'):
-            role_id = guild_obj.get_role(int(config['Discord Roles'][i.name]))
-            await user_obj.remove_roles(role_id)
-    # remove_roles
-    str_roles = ['th9s', 'th10s', 'th11s', 'th12s']
-    print(config['Discord Roles'][str(str_roles[0])])
-
-
+    await ctx.send(await invite().create_invite(max_age = 600, max_uses = 1))
     return
+
+    obj = discord_client.get_guild(310460540944252939)
+    channel = obj.get_channel(513568696988598282)
+    await ctx.send(await channel.create_invite(max_age = 1, max_uses = 1))
+    
+
+@discord_client.command()
+async def kill(ctx):
+    await ctx.send(embed = Embed(title="Later..", color=0x00FF00))
+    await discord_client.logout()
+    
+@discord_client.command()
+async def newinvite(ctx):
+    arg = ctx.message.content.split(" ")[1:]
+    if len(arg) == 1 and arg[0].isdigit():
+        inv = await invite().create_invite(max_age = (int(arg[0]) *60), max_uses = 1 )
+        await ctx.send(inv)
+    if len(arg) == 0:
+        inv = await invite().create_invite(max_age = 600, max_uses = 1 )
+        await ctx.send(inv)
+    return
+
 
 @discord_client.command()
 async def listroles(ctx):
     tupe = []
-    guild_obj = discord_client.get_guild(int(config['Bot Configs']['guild_id']))
+    guild_obj = discord_client.get_guild(int(config['Bot']['ZuluDisc_ID']))
     for i in guild_obj.roles:
         tupe.append((i.name,i.id))
 
@@ -90,7 +97,7 @@ async def listroles(ctx):
 @discord_client.command(pass_context=True)
 async def lcm(ctx):
     # Read clan code to query the clans users list
-    res = coc_client.get_clan(config['Clash Configs']['zulu_clan'])
+    res = coc_client.get_clan(config['Clash']['ZuluClash_Tag'])
 
     # Quick check to  make sure that the https request was good
     if int(res.status_code) > 300:
@@ -99,6 +106,7 @@ async def lcm(ctx):
         "Our current exit node is {}".format(get('https://api.ipify.org').text))
         embed.add_field(name="Bad Request: {}".format(res.status_code),value=msg)
         await ctx.send(embed=embed)
+        return
 
     #here we'll ad our actual lcm code
     else:
@@ -174,7 +182,7 @@ async def useradd(ctx):
                 # coc_R == response 
                 #
                 member_stat = CoC_Stats(res.json())
-                roleObj_CM = discord_client.get_guild(int(config['Bot Configs']['guild_id'])).get_role(int(config['Discord Roles']['CoC_Members']))
+                roleObj_CM = discord_client.get_guild(int(config['Discord']['ZuluDisc_ID'])).get_role(int(config['Discord Roles']['CoC_Members']))
                 roleObj_TH, roleStr_TH = get_THRole(member_stat.th_lvl)
                 #
                 # Print out the warning
@@ -188,7 +196,7 @@ async def useradd(ctx):
                 for role in disc_UserObj.roles:
                     if role.name == "CoC Members":
                         flag = False
-                        await ctx.send(embed = Embed(title=f"{member_stat.coc_name} already had 'CoC Members' role assigned.", color=0xFFFF00))
+                        await ctx.send(embed = Embed(title=f"{member_stat.coc_name} already has 'CoC Members' role assigned.", color=0xFFFF00))
                 
                 if flag:
                     await disc_UserObj.add_roles(roleObj_CM) # Give user CoC Members role
@@ -201,7 +209,7 @@ async def useradd(ctx):
                     if role.name.startswith('th'):
                         flag = False
                         if role.name == roleObj_TH.name:
-                            msg = f"{member_stat.coc_name} already had {roleObj_TH.name} role assigned."
+                            msg = f"{member_stat.coc_name} already has {roleObj_TH.name} role assigned."
                             await ctx.send(embed = Embed(title=msg, color=0xFFFF00))
                         else:
                             await disc_UserObj.remove_roles(role)      # remove old th role
@@ -233,7 +241,10 @@ async def useradd(ctx):
                 #
                 # Welcome the user and display their stats
                 #
-                msg = f"You're fully added {disc_UserObj.mention}! Welcome to Zulu!"
+                await ctx.send(await invite().create_invite(max_age = 600, max_uses = 1))
+                msg = (f"{disc_UserObj.mention}, welcome to Zulu! "
+                "Don't forget to join the planning server! The server is used to plan "
+                "attacks and get feedback from your clanmates.")
                 await ctx.send(msg)
                 break
     
@@ -251,4 +262,4 @@ async def on_ready():
     game = Game("if __main__ == __name__:")
     await discord_client.change_presence(status=discord.Status.online, activity=game)  
 
-discord_client.run(config['Bot Configs']['token'])
+discord_client.run(config['Bot']['Bot_Token'])
