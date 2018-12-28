@@ -20,7 +20,7 @@ class ZuluDB():
                                         Clash_icon text,
 
                                         Disc_ID integer NOT NULL,
-                                        Disc_joinedDate integer NOT NULL,
+                                        Disc_joinedDate text NOT NULL,
 
                                         in_PlanningServer text NOT NULL,
                                         is_Active text NOT NULL,
@@ -33,15 +33,14 @@ class ZuluDB():
         except sqlite3.OperationalError as e:
             print(e)
         
-        sql_create_update_table = """CREATE TABLE IF NOT EXISTS dailyupdate (
-                                        Update integer NOT NULL,
+        sql_create_update_table = """ CREATE TABLE IF NOT EXISTS dailyupdate (
+                                        Update text NOT NULL,
                                         Clash_tag text NOT NULL,
                                         Current_Donation integer NOT NULL,
                                         in_Zulu text NOT NULL,
-
-                                        PRIMARY KEY (date, Clash_tag),
+                                        PRIMARY KEY (Update, Clash_tag),
                                         CONSTRAINT coc_tag_constraint FOREIGN KEY (Clash_tag) REFERENCES users(Clash_tag)    
-                                    );"""
+                                    ); """
         try:                                    
             self.conn.cursor().execute(sql_create_update_table)
             self.conn.commit()
@@ -64,8 +63,7 @@ class ZuluDB():
                     Disc_joinedDate,
                     in_PlanningServer,
                     is_Active,
-                    kick_Note)
-                    
+                    kick_Note) 
                     VALUES(?,?,?,?,?,?,?,?,?,?)
                         """  
         try:
@@ -81,7 +79,7 @@ class ZuluDB():
         :param tupe: tupe of data
         :return:
         """
-        sql_update = """INSERT INTO dailyupdate(
+        sql_update = """ INSERT INTO dailyupdate (
                     Update,
                     Clash_tag,
                     Current_Donation,
@@ -91,6 +89,7 @@ class ZuluDB():
         try:
             self.conn.cursor().execute(sql_update, tupe)
             self.conn.commit()
+            return
 
         except sqlite3.IntegrityError as e:
             print(e)
