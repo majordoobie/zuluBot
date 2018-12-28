@@ -3,9 +3,11 @@ import discord
 from discord import Embed, Game, Guild
 from CoC_API import CoC
 from CoC_Stats import CoC_Stats
+from ZuluBot_DB import ZuluDB
 from collections import OrderedDict
 from configparser import ConfigParser
 from requests import get
+from datetime import datetime
 
 #Permissions
 # create_instant_invite
@@ -15,6 +17,7 @@ config.read('zuluConfig.ini')
 discord_client = commands.Bot(command_prefix = config['Bot']['Bot_Prefix'])
 discord_client.remove_command("help")
 coc_client = CoC(config['Clash']['ZuluClash_Token'])
+DB = ZuluDB()
 
 # Function to check if user is a leader/admin
 def authorized(users_roles):
@@ -232,7 +235,26 @@ async def useradd(ctx):
                 # Add user to database
                 #
                 #
-
+                msg = f"Initiating database with {member_stat.coc_name}'s data."
+                await ctx.send(embed = Embed(title=msg, color=0xFFFF00))
+                DB.insert_userdata((
+                    member_stat.coc_tag,
+                    member_stat.coc_name,
+                    member_stat.th_lvl,
+                    member_stat.league,
+                    member_stat.league_icon,
+                    disc_UserObj.id,
+                    datetime.utcnow(),
+                    "False",
+                    "True",
+                    None
+                ))
+                # DB.update_donations((
+                #     datetime.utcnow(),
+                #     member_stat.coc_tag,
+                #     member_stat.total_Donations,
+                #     "True"
+                # ))
                 #
                 # Welcome the user and display their stats
                 #

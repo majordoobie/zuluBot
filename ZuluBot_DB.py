@@ -34,7 +34,7 @@ class ZuluDB():
             print(e)
         
         sql_create_update_table = """CREATE TABLE IF NOT EXISTS dailyupdate (
-                                        date REAL NOT NULL,
+                                        Update integer NOT NULL,
                                         Clash_tag text NOT NULL,
                                         Current_Donation integer NOT NULL,
                                         in_Zulu text NOT NULL,
@@ -55,15 +55,18 @@ class ZuluDB():
         :return:
         """
         sql_update = """INSERT INTO users(
-                    CoC_tag,
-                    CoC_name,
+                    Clash_tag,
+                    Clash_name,
+                    Clash_lvl,
+                    Clash_league,
+                    Clash_icon,
                     Disc_ID,
-                    CoC_thLvl,
-                    CoC_league,
-                    CoC_icon,
-                    joined_date,
-                    in_PlanningServer)
-                    VALUES(?,?,?,?,?,?,?,?)
+                    Disc_joinedDate,
+                    in_PlanningServer,
+                    is_Active,
+                    kick_Note)
+                    
+                    VALUES(?,?,?,?,?,?,?,?,?,?)
                         """  
         try:
             self.conn.cursor().execute(sql_update, tupe)
@@ -79,10 +82,10 @@ class ZuluDB():
         :return:
         """
         sql_update = """INSERT INTO dailyupdate(
-                    date,
-                    CoC_Tag,
+                    Update,
+                    Clash_tag,
                     Current_Donation,
-                    isPresent)
+                    in_Zulu)
                     VALUES(?,?,?,?)
                         """ 
         try:
@@ -101,13 +104,13 @@ class ZuluDB():
 # tupe = ( "#TAG123", "SgtMajorDoobie", 123123123123, 10, "Crystal", "https:\\", 123123123 )
 # shit1 = ("2018-11-22 03:06:33.154148","#TAG123", 151, "TRUE" )
 # shit2 = ("2018-11-22 03:06:33.154147","#TAG134", 300, "TRUE" )
-shit3 = ("2018-11-22 03:06:33.154149", "#TAG123", 350, "TRUE")
-dbb = ZuluDB()
+# shit3 = ("2018-11-22 03:06:33.154149", "#TAG123", 350, "TRUE")
+# dbb = ZuluDB()
 # dbb.insert_userdata(tupe)
 # dbb.update_donations(shit1)
 # dbb.update_donations(shit2)
 # dbb.update_donations(shit3)
-dbb.update_donations(shit3)
+# dbb.update_donations(shit3)
 
 
 
