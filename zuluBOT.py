@@ -49,12 +49,7 @@ def invite():
 
 @discord_client.command()
 async def test(ctx):
-    await ctx.send(await invite().create_invite(max_age = 600, max_uses = 1))
-    return
-
-    obj = discord_client.get_guild(310460540944252939)
-    channel = obj.get_channel(513568696988598282)
-    await ctx.send(await channel.create_invite(max_age = 1, max_uses = 1))
+    pass
     
 
 @discord_client.command()
