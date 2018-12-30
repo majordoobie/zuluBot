@@ -44,6 +44,7 @@ def get_THRole(userLevel):
         if userLevel == level:
             objRole = guild_obj.get_role(int(config['Discord Roles'][str(str_role)]))
             return objRole, str_role
+    return None, None
 
 def invite():
     obj = discord_client.get_guild(int(config['Discord']['PlanDisc_ID']))
@@ -182,6 +183,11 @@ async def useradd(ctx):
                 member_stat = CoC_Stats(res.json())
                 roleObj_CM = discord_client.get_guild(int(config['Discord']['ZuluDisc_ID'])).get_role(int(config['Discord Roles']['CoC_Members']))
                 roleObj_TH, roleStr_TH = get_THRole(member_stat.th_lvl)
+                if roleObj_TH == None:
+                    msg = f"{member_stat.coc_name} has a Town Hall level that is not supported: TH{member_stat.th_lvl}."
+                    await ctx.send(embed = Embed(title="ERROR", description=msg, color=0xFF0000))
+                    return
+
                 #
                 # Print out the warning
                 #
@@ -235,7 +241,7 @@ async def useradd(ctx):
                 # Add user to database
                 #
                 #
-                msg = f"Initiating database with {member_stat.coc_name}'s data."
+                msg = f"Adding {member_stat.coc_name}'s data to the database"
                 await ctx.send(embed = Embed(title=msg, color=0xFFFF00))
                 send = DB.insert_userdata((
                     member_stat.coc_tag,
@@ -252,18 +258,21 @@ async def useradd(ctx):
                 
                 if send != None:
                     msg = f"Clash tag {member_stat.coc_tag} already exists in the database."
-                    await ctx.send(embed = Embed(title=f"**ERROR**\n{send}", description=msg, color=0xff0000))
+                    await ctx.send(embed = Embed(title=f"**SQL ERROR**\n{send}", description=msg, color=0xff0000))
                     ####
                         # Insert code for checking the "Kicked" flag and offer
                         # to flip to true
                     ###
-
-                DB.update_donations((
+                
+                send = DB.update_donations((
                     datetime.utcnow(),
                     member_stat.coc_tag,
                     member_stat.total_Donations,
                     "True"
                 ))
+                if send != None:
+                    msg = f"Operational Error while inserting data."
+                    await ctx.send(embed = Embed(title=f"**SQL ERROR**\n{send}", description=msg, color=0xff0000))
                 #
                 # Welcome the user and display their stats
                 #

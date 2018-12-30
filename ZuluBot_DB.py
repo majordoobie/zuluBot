@@ -20,34 +20,40 @@ class ZuluDB():
                                         Clash_icon text,
 
                                         Disc_ID integer NOT NULL,
-                                        Disc_joinedDate text NOT NULL,
+                                        Disc_joinedDate date NOT NULL,
 
                                         in_PlanningServer text NOT NULL,
                                         is_Active text NOT NULL,
                                         kick_Note text,
                                         PRIMARY KEY(Clash_tag)
                                     ); """
-        try:                                    
+        try:
+            print("Creating Users table")                                    
             self.conn.cursor().execute(sql_create_users_table)
             self.conn.commit()
-            return None
+            print("Success.")
+
         except sqlite3.OperationalError as e:
-            print(e)
+            print(f"Failed to create with {e}")
             return e
-        
+
         sql_create_update_table = """ CREATE TABLE IF NOT EXISTS dailyupdate (
-                                        Update text NOT NULL,
+                                        increment_date date NOT NULL,
                                         Clash_tag text NOT NULL,
                                         Current_Donation integer NOT NULL,
                                         in_Zulu text NOT NULL,
-                                        PRIMARY KEY (Update, Clash_tag),
+                                        PRIMARY KEY (increment_date, Clash_tag),
                                         CONSTRAINT coc_tag_constraint FOREIGN KEY (Clash_tag) REFERENCES users(Clash_tag)    
                                     ); """
-        try:                                    
+        try:  
+            print("Creating DailyUpdate table")                                    
             self.conn.cursor().execute(sql_create_update_table)
             self.conn.commit()
+            print("Success")
+            return None
         except sqlite3.OperationalError as e:
-            print(e)
+            print(f"OperationalError: {e}")
+            return e
 
     def insert_userdata(self, tupe):
         """ Insert user data into the users table
@@ -83,24 +89,28 @@ class ZuluDB():
         :param tupe: tupe of data
         :return:
         """
-        sql_update = """ INSERT INTO dailyupdate (
-                    Update,
+        
+        sql_update = """INSERT INTO dailyupdate(
+                    increment_date,
                     Clash_tag,
                     Current_Donation,
                     in_Zulu)
                     VALUES(?,?,?,?)
                         """ 
         try:
+            #Breaks here
             self.conn.cursor().execute(sql_update, tupe)
             self.conn.commit()
-            return
+            return None
 
         except sqlite3.IntegrityError as e:
             print(e)
             print("Error with {}".format(tupe))
+            return e
         except sqlite3.OperationalError as e:
             print(e)
-            print("Error with {}".format(tupe))
+            print("Error with this data {}".format(tupe))
+            return e
 
     
 
@@ -114,6 +124,7 @@ class ZuluDB():
 # dbb.update_donations(shit2)
 # dbb.update_donations(shit3)
 # dbb.update_donations(shit3)
+# tupe = (datetime.datetime.utc(), "#123123", 1000, "TRUE")
 
 
 
