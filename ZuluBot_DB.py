@@ -82,6 +82,10 @@ class ZuluDB():
         except sqlite3.IntegrityError as e:
             print(e)
             return e
+
+        except sqlite3.OperationalError as e:
+            print(e)
+            return e
     
     def update_donations(self, tupe):
         """ Insert updated user donation data 
@@ -112,24 +116,52 @@ class ZuluDB():
             print("Error with this data {}".format(tupe))
             return e
 
-    
+    def is_Active(self, coc_tag):
+        """ Check to see if user has the is_Active flag set to true meaning that they
+            are part of the clan still but just not present.
+        :param conn: Connection object
+        :param coc_tag: User CoC Tag
+        :return: True or False and kick_note
+        """
+        sql_query = ("SELECT * FROM users WHERE clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (coc_tag,))
+        row = cur.fetchall()
 
-# tupe = ( "#TAG123", "SgtMajorDoobie", 123123123123, 10, "Crystal", "https:\\", 123123123 )
-# shit1 = ("2018-11-22 03:06:33.154148","#TAG123", 151, "TRUE" )
-# shit2 = ("2018-11-22 03:06:33.154147","#TAG134", 300, "TRUE" )
-# shit3 = ("2018-11-22 03:06:33.154149", "#TAG123", 350, "TRUE")
-# dbb = ZuluDB()
-# dbb.insert_userdata(tupe)
-# dbb.update_donations(shit1)
-# dbb.update_donations(shit2)
-# dbb.update_donations(shit3)
-# dbb.update_donations(shit3)
-# tupe = (datetime.datetime.utc(), "#123123", 1000, "TRUE")
+        if len(row) == 1:
+            return row[0]
+        else:
+            print("Could not find the tag error.. do something here")
 
 
+    def set_Active(self, str_bool, coc_tag):
+        """ Change users active state to True or False. This will dictate if they are 
+        currently enrolled into the clan.
+        :param conn: Connection object
+        :param str_bool: String boolean to change the value to
+        :param coc_tag: User CoC Tag
+        :return: True or False and kick_note
+        """
+        sql_query = ("UPDATE users SET is_Active = ? WHERE Clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (str_bool, coc_tag))
 
+        sql_query = ("SELECT * FROM users WHERE clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (coc_tag,))
+        row = cur.fetchall()
+        
+        if len(row) == 1:
+            return row[0]
+        else:
+            print("Could not find the tag error.. do something here")
 
-
+    def get_all(self, coc_tag):
+        sql_query = ("SELECT * FROM users")
+        self.conn.cursor().execute(sql_query)
+        rows = self.conn.cursor().fetchall()
+        for row in rows:
+            print(row)
 
 
 

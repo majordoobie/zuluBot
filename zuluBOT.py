@@ -19,6 +19,13 @@ discord_client.remove_command("help")
 coc_client = CoC(config['Clash']['ZuluClash_Token'])
 DB = ZuluDB()
 
+# Question function for await
+def yesno_check(m):
+        if m.content.lower() in ['yes','no']:
+            return True
+        else:
+            return False
+
 # Function to check if user is a leader/admin
 def authorized(users_roles):
     for role in users_roles:
@@ -58,7 +65,10 @@ async def test(ctx):
 
 @discord_client.command()
 async def kill(ctx):
-    await ctx.send(embed = Embed(title="Later..", color=0x00FF00))
+    await ctx.send("Closing database..")
+    DB.conn.close()
+    await ctx.send("Terminating bot..")
+    await ctx.send("_Later._")
     await discord_client.logout()
     
 @discord_client.command()
@@ -257,12 +267,38 @@ async def useradd(ctx):
                 ))
                 
                 if send != None:
+                    if send.args[0] == "database is locked": #e.args[0] == 'database is locked'
+                        msg = "Terminating to prevent corruption. Please release handles to databse before using me."
+                        await ctx.send(embed = Embed(title=f"**SQL ERROR**\n__{send}__", description=msg, color=0xff0000))
+                        await ctx.send("Terminating process..")
+                        return
+
                     msg = f"Clash tag {member_stat.coc_tag} already exists in the database."
-                    await ctx.send(embed = Embed(title=f"**SQL ERROR**\n{send}", description=msg, color=0xff0000))
-                    ####
-                        # Insert code for checking the "Kicked" flag and offer
-                        # to flip to true
-                    ###
+                    await ctx.send(embed = Embed(title=f"**SQL ERROR**\n__{send}__", description=msg, color=0xff0000))
+                    
+                    # Query to see why the user is already in the database
+                    user_row = DB.is_Active(member_stat.coc_tag)
+                    print(user_row)
+                    # If user is in the database and is active exit. 
+                    if user_row[8] == "True":
+                        msg = (f"{member_stat.coc_name} is already registered and their active status is set to True. "
+                        "Terminating user enrollment.")
+                        await ctx.send(embed = Embed(title=f"**User Status:** TRUE\n__{send}__", description=msg, color=0x5c0189))
+                        return
+                    # If user is in the database and was not active, ask if they really want to add someone they kicked
+                    elif user_row[8] == "False":
+                        msg = (f"{member_stat.coc_name} is already registered, but has a active status of False. "
+                        f"The reasoning if supplied by admin is:\n\n---\n{user_row[9]}")
+                        await ctx.send(embed = Embed(title=f"**User Status:** TRUE\n{send}", description=msg, color=0x5c0189))
+                        await ctx.send("Would you like to continue adding them? (Yes/No)")
+                        msg = await discord_client.wait_for('message', check = yesno_check)
+                        if msg.content.lower() == 'no':
+                            await ctx.send("Terminating process.")
+                            return
+                        elif msg.content.lower() == 'yes':
+                            await ctx.send(f"Changing {member_stat.coc_name} active status to True.")
+                            DB.set_Active("True", member_stat.coc_tag)
+                            
                 
                 send = DB.update_donations((
                     datetime.utcnow(),
