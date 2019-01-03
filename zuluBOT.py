@@ -7,7 +7,9 @@ from ZuluBot_DB import ZuluDB
 from collections import OrderedDict
 from configparser import ConfigParser
 from requests import get
-from datetime import datetime
+from datetime import datetime, timedelta
+import pandas as pd
+import asyncio
 
 #Permissions
 # create_instant_invite
@@ -53,10 +55,29 @@ def get_THRole(userLevel):
             return objRole, str_role
     return None, None
 
+# create an invitation for the planning server
 def invite():
     obj = discord_client.get_guild(int(config['Discord']['PlanDisc_ID']))
     channel = obj.get_channel(int(config['Discord']['PlanDisc_Channel']))
     return channel
+
+# find the datetime object that represents last sunday
+def lastSunday():
+    today = datetime.utcnow()
+    delta = 0 - today.isoweekday()
+    return today + timedelta(delta)
+
+
+# backgroup query refresh
+async def weeklyRefresh():
+    await discord_client.wait_until_ready()
+    while not discord_client.is_closed():
+        wait_time = 60 - datetime.utcnow().minute
+        print(f"Waiting {wait_time} minutes until next update.")
+        await asyncio.sleep(wait_time * 60)
+        print("update user database")
+
+
 
 @discord_client.command()
 async def test(ctx):
@@ -241,9 +262,13 @@ async def useradd(ctx):
                 #
                 if disc_UserObj.display_name != member_stat.coc_name:
                     old_name = disc_UserObj.display_name
-                    await disc_UserObj.edit(nick=member_stat.coc_name)
-                    msg = f"Changed {member_stat.coc_name}'s nickname from [{old_name}] to [{member_stat.coc_name}]."
-                    await ctx.send(embed = Embed(title=msg, color=0x00ff00))
+                    try:
+                        await disc_UserObj.edit(nick=member_stat.coc_name)
+                        msg = f"Changed {member_stat.coc_name}'s nickname from [{old_name}] to [{member_stat.coc_name}]."
+                        await ctx.send(embed = Embed(title=msg, color=0x00ff00))
+                    except:
+                        msg = f"It is impossible to change the nickname of discord server owners."
+                        await ctx.send(embed = Embed(title=f"**DISCORD ERROR**\n{send}", description=msg, color=0xff0000))
                 else:
                     msg = f"{member_stat.coc_name} nickname already reflects their CoC name."
                     await ctx.send(embed = Embed(title=msg, color=0xFFFF00))
@@ -258,7 +283,6 @@ async def useradd(ctx):
                     member_stat.coc_name,
                     member_stat.th_lvl,
                     member_stat.league,
-                    member_stat.league_icon,
                     disc_UserObj.id,
                     datetime.utcnow(),
                     "False",
@@ -278,17 +302,16 @@ async def useradd(ctx):
                     
                     # Query to see why the user is already in the database
                     user_row = DB.is_Active(member_stat.coc_tag)
-                    print(user_row)
                     # If user is in the database and is active exit. 
-                    if user_row[8] == "True":
+                    if user_row[7] == "True":
                         msg = (f"{member_stat.coc_name} is already registered and their active status is set to True. "
                         "Terminating user enrollment.")
                         await ctx.send(embed = Embed(title=f"**User Status:** TRUE\n__{send}__", description=msg, color=0x5c0189))
                         return
                     # If user is in the database and was not active, ask if they really want to add someone they kicked
-                    elif user_row[8] == "False":
+                    elif user_row[7] == "False":
                         msg = (f"{member_stat.coc_name} is already registered, but has a active status of False. "
-                        f"The reasoning if supplied by admin is:\n\n---\n{user_row[9]}")
+                        f"The reasoning if supplied by admin is:\n\n---\n{user_row[8]}")
                         await ctx.send(embed = Embed(title=f"**User Status:** TRUE\n{send}", description=msg, color=0x5c0189))
                         await ctx.send("Would you like to continue adding them? (Yes/No)")
                         msg = await discord_client.wait_for('message', check = yesno_check)
@@ -327,10 +350,78 @@ async def useradd(ctx):
         msg = "Sorry, you don't have the approved role for this command."
         await ctx.sendy(embed = Embed(title=msg, color=0xff0000))
 
+@discord_client.command()
+async def active_users(ctx):
+    """
+    Get a list of all users that have the active flag set to true in the database
+    """
+    if authorized(ctx.message.author.roles):
+        rows = DB.get_all()
+        df = pd.DataFrame(rows, columns=['CoC_TAG', 'CoC_NAME', 'TH_LvL', 'League', 'Disc_ID', 'DB_JoinDate', 'in_Planning', 'is_Active', 'KickNote'])
+        #await ctx.send(df)
+        #await ctx.send(df.to_records())
+        for dataset in df.to_records():
+            await ctx.send(dataset)
+        # for row in rows:
+            # embed = Embed(title=f"**{row[1]}**", color=0x8A2BE2)
+            # embed.add_field(name="User Tag", value=f"{row[0]}", inline=False)
+            # embed.add_field(name="User Level", value=f"{row[2]}", inline=False)
+            # embed.add_field(name="League", value=f"{row[3]}", inline=False)
+            # embed.add_field(name="In Planning Server", value=f"{row[7]}", inline=False)
+            # embed.add_field(name="Active", value=f"{row[8]}", inline=False)
+            # await ctx.send(embed=embed)
+            # embed = Embed(title=f"**{row[1]}**", color=0x8A2BE2)
+            # ctx.send(embed=embed)
+            # await ctx.send(f"`{row[0]}`" + u"\u0020\u0020\u0020" + f"`{row[1]}`")
+    else:
+        msg = "Sorry, you don't have the approved role for this command."
+        await ctx.sendy(embed = Embed(title=msg, color=0xff0000))
+
+@discord_client.command()
+async def donation(ctx):
+    """
+    Find the donation status of your account
+    """
+
+    # First find the user in the databse
+    flag = False
+    user_tupe = ()
+    arg = ctx.message.content.split(" ")[1:]
+    if len(arg) == 0:
+        rows = DB.get_all()
+        for row in rows:
+            if int(row[4]) == int(ctx.author.id):
+                user_tupe = row
+                flag = True
+
+    elif len(arg) == 1:
+        if arg[0].startswith("#"):
+            pass
+        else:
+            arg[0] = "#"+arg[0]
+        rows = DB.get_all()
+        for row in rows:
+            if str(row[0]) == str(arg[0]):
+                user_tupe = row
+                flag = True
+
+    if flag == False:
+        msg = (f"Could not find the user {arg[0]} in the database. Please make sure "
+        "that they exists in the clan by using the /lcm command, then add them using /useradd.")
+        await ctx.send(embed = Embed(title=f"**DB ERROR**", description=msg, color=0xff0000))
+
+    # if user exists proceed to calculate their donation
+    if flag:
+        print(user_tupe)
+    else:
+        print(f"no dice {arg[0]}")
+
+
 @discord_client.event
 async def on_ready():
     print("Bot connected.")
     game = Game("if __main__ == __name__:")
     await discord_client.change_presence(status=discord.Status.online, activity=game)  
 
+discord_client.loop.create_task(weeklyRefresh())
 discord_client.run(config['Bot']['Bot_Token'])

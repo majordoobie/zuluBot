@@ -19,14 +19,17 @@ class CoC_Stats():
         self.donationsReceived = jjson['donationsReceived']
         
         #League dict
-        self.league = jjson['league']['name']
-        self.league_icon = jjson['league']['iconUrls']['tiny']
+        if 'league' in jjson.keys(): # If user has their league reset and haven't set it they won't have one
+            self.league = jjson['league']['name']
+            self.league_icon = jjson['league']['iconUrls']['tiny']
+        else:
+            self.league = None
+            self.league_icon = None
 
         # Donations 
         for i in jjson['achievements']:
             if i['name'] == "Friend in Need":
                 self.total_Donations = i['value']
-        
         
         # Clan Dict
         self.currentClan_name = jjson['clan']['name']

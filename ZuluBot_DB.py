@@ -17,7 +17,6 @@ class ZuluDB():
                                         Clash_name text NOT NULL,
                                         Clash_lvl integer NOT NULL,
                                         Clash_league text,
-                                        Clash_icon text,
 
                                         Disc_ID integer NOT NULL,
                                         Disc_joinedDate date NOT NULL,
@@ -66,13 +65,12 @@ class ZuluDB():
                     Clash_name,
                     Clash_lvl,
                     Clash_league,
-                    Clash_icon,
                     Disc_ID,
                     Disc_joinedDate,
                     in_PlanningServer,
                     is_Active,
                     kick_Note) 
-                    VALUES(?,?,?,?,?,?,?,?,?,?)
+                    VALUES(?,?,?,?,?,?,?,?,?)
                         """  
         try:
             self.conn.cursor().execute(sql_update, tupe)
@@ -156,12 +154,16 @@ class ZuluDB():
         else:
             print("Could not find the tag error.. do something here")
 
-    def get_all(self, coc_tag):
+    def get_all(self):
+        """ Get all rows from users table
+        :param conn: Connection object
+        :return: All rows in users
+        """
         sql_query = ("SELECT * FROM users")
-        self.conn.cursor().execute(sql_query)
-        rows = self.conn.cursor().fetchall()
-        for row in rows:
-            print(row)
+        cur = self.conn.cursor()
+        cur.execute(sql_query)
+        rows = cur.fetchall()
+        return rows
 
 
 
