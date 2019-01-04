@@ -41,6 +41,7 @@ class ZuluDB():
                                         Clash_tag text NOT NULL,
                                         Current_Donation integer NOT NULL,
                                         in_Zulu text NOT NULL,
+                                        trophies integer NOT NULL,
                                         PRIMARY KEY (increment_date, Clash_tag),
                                         CONSTRAINT coc_tag_constraint FOREIGN KEY (Clash_tag) REFERENCES users(Clash_tag)    
                                     ); """
@@ -96,8 +97,9 @@ class ZuluDB():
                     increment_date,
                     Clash_tag,
                     Current_Donation,
-                    in_Zulu)
-                    VALUES(?,?,?,?)
+                    in_Zulu,
+                    trophies)
+                    VALUES(?,?,?,?,?)
                         """ 
         try:
             #Breaks here
@@ -154,7 +156,25 @@ class ZuluDB():
         else:
             print("Could not find the tag error.. do something here")
 
-    def get_all(self):
+    def set_inPlanning(self, str_bool, coc_tag):
+        sql_query = ("UPDATE users SET in_PlanningServer = ? WHERE Clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (str_bool, coc_tag,))
+        sql_query = ("SELECT * FROM users WHERE clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (coc_tag,))
+        row = cur.fetchall()
+        return row
+        
+
+    def update_users(self, clash_tag, clash_lvl, clash_league):
+        sql_query = ("UPDATE users SET Clash_lvl = ?, Clash_league = ? WHERE Clash_tag = ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (clash_lvl, clash_league, clash_tag,))
+        row = cur.fetchall()
+        return row
+
+    def get_allUsers(self):
         """ Get all rows from users table
         :param conn: Connection object
         :return: All rows in users
@@ -165,7 +185,21 @@ class ZuluDB():
         rows = cur.fetchall()
         return rows
 
+    def get_allDonations(self, coc_tag, sunday):
+        """ Get all rows from dailydonations table
+        :param conn: Connection object
+        :return: All rows in users
+        """
+        # sql_query = ("SELECT * FROM dailyupdate WHERE clash_tag = ? ")
+        # cur = self.conn.cursor()
+        # cur.execute(sql_query, (coc_tag,))
+        # rows = cur.fetchall()
 
+        sql_query = ("SELECT * FROM dailyupdate WHERE clash_tag = ? AND increment_date BETWEEN ? AND ?")
+        cur = self.conn.cursor()
+        cur.execute(sql_query, (coc_tag, sunday, datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')))
+        rows = cur.fetchall()
+        return rows
 
-           
+        
 
