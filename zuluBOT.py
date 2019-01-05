@@ -490,6 +490,59 @@ async def useradd(ctx):
         await ctx.sendy(embed = Embed(title=msg, color=0xff0000))
 
 @discord_client.command()
+async def userkick(ctx):
+    """
+    Kick a user by providing their clash tag
+    """
+    if authorized(ctx.message.author.roles):
+        arg = ctx.message.content.split(" ")[1:]
+        if len(arg) == 1:
+            if arg[0].startswith("#"):
+                pass
+            else:
+                arg[0] = "#"+arg[0]
+
+            rows = DB.get_allUsers()
+            flag = False
+            for row in rows:
+                if row[0] == arg[0].upper():
+                    flag = True
+
+            if flag:
+                row = DB.set_Active("False", arg[0].upper())
+                await ctx.send(row)
+                await ctx.send("Would you like to add a note about this action? (Yes/No)")
+                msg = await discord_client.wait_for('message', check = yesno_check)
+                if msg.content.lower() == 'no':
+                    pass
+                elif msg.content.lower() == 'yes':
+                    await ctx.send("Please type your message and press enter.")
+                    msg2 = await discord_client.wait_for('message')
+                    # BROKEN
+                    #
+                    # 
+                    #
+                    DB.set_kickNote(msg2.content, arg[0].upper())
+                    await ctx.send("YOu are all set")
+
+
+            else:
+                msg = (f"{arg[0].upper()} is not in this database.")
+                await ctx.send(embed = Embed(title=msg, color=0xff0000))
+                return
+
+
+        else:
+            msg = "You must provide a clash tag. Try /lcm or /help."
+            await ctx.send(embed = Embed(title=msg, color=0xff0000))
+            return
+    else:
+        msg = "Sorry, you don't have the approved role for this command."
+        await ctx.send(embed = Embed(title=msg, color=0xff0000))
+        return
+
+
+@discord_client.command()
 async def active_users(ctx):
     """
     Get a list of all users that have the active flag set to true in the database
@@ -499,25 +552,22 @@ async def active_users(ctx):
         mem_ids = [ mem.id for mem in discord_client.get_guild(int(config['Discord']['PlanDisc_ID'])).members ]
         for row in rows:
             if row[6] == "True" and (row[4] in mem_ids):
-                print("passing")
                 pass
             elif row[6] == "True" and (row[4] not in mem_ids):
-                print("hello")
                 DB.set_inPlanning("False", row[0])
             elif row[6] == "False" and (row[4] in mem_ids):
-                print('yo')
-                rows = DB.set_inPlanning("True", row[0])
-                print(rows)
+                DB.set_inPlanning("True", row[0])
             elif row[6] == "False" and (row[4] not in mem_ids):
-                print("passing2")
                 pass
             else:
                 print("Error")
 
             if row[4] in mem_ids:
-                await ctx.send(embed = Embed(title=f"{row[1]}", description=f"{row[0]}",color=0x8A2BE2))
+                if row[7] == "True":
+                    await ctx.send(embed = Embed(title=f"{row[1]}", description=f"{row[0]}",color=0x8A2BE2))
             else:
-                await ctx.send(embed = Embed(title=f"{row[1]}", description=f"{row[0]}\n{row[1]} is not in the planning server. Please use /newinvite",color=0xFF0000))
+                if row[7] == "True":
+                    await ctx.send(embed = Embed(title=f"{row[1]}", description=f"{row[0]}\n{row[1]} is not in the planning server. Please use /newinvite",color=0xFF0000))
 
     else:
         msg = "Sorry, you don't have the approved role for this command."
@@ -536,8 +586,14 @@ async def donation(ctx):
         rows = DB.get_allUsers()
         for row in rows:
             if int(row[4]) == int(ctx.author.id):
-                user_tupe = row
-                flag = True
+                if row[7] == "True":
+                    user_tupe = row
+                    flag = True
+                else:
+                    msg = (f"User, {row[1]}, active flag is set to False. Please re-add this "
+                    "user using /useradd.")
+                    await ctx.send(embed = Embed(title=f"**Availability Error**", description=msg, color=0xff0000))
+                    return
 
     elif len(arg) == 1:
         if arg[0].startswith("#"):
@@ -547,8 +603,14 @@ async def donation(ctx):
         rows = DB.get_allUsers()
         for row in rows:
             if str(row[0]) == str(arg[0]):
-                user_tupe = row
-                flag = True
+                if row[7] == "True":
+                    user_tupe = row
+                    flag = True
+                else:
+                    msg = (f"User, {row[1]}, active flag is set to False. Please re-add this "
+                    "user using /useradd.")
+                    await ctx.send(embed = Embed(title=f"**Availability Error**", description=msg, color=0xff0000))
+                    return
 
     if flag == False:
         msg = (f"Could not find the user {arg[0]} in the database. Please make sure "
